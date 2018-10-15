@@ -344,6 +344,10 @@ function receivedMessage(event) {
         sendFileMessage(senderID);
         break;
 
+      case 'reporte':
+        sendFileMessage(senderID);
+        break;
+
       case 'button':
         sendButtonMessage(senderID);
         break;
