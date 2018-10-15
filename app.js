@@ -71,6 +71,76 @@ console.log(req.query);
   }  
 });
 
+app.get('/prueba', function (req, res) {
+  const Sequelize = require('sequelize');
+  const sequelize = new Sequelize('dealbrand_dev_v2', 'forceclose-bot', 'forceclose-bot', {
+    host: 'dev-forceclose.com',
+    dialect: 'mysql',
+
+    pool: {
+      max: 5,
+      min: 0,
+      acquire: 30000,
+      idle: 10000
+    },
+
+    // SQLite only
+    storage: 'path/to/database.sqlite',
+
+    // http://docs.sequelizejs.com/manual/tutorial/querying.html#operators
+    operatorsAliases: false
+  });
+
+  const query = `
+  SELECT
+	    case
+		when ap.tipo = "1" then "ingreso_jornada"
+        when ap.tipo = "2" then "ingreso_refrigerio"
+        when ap.tipo = "3" then "salida_refrigerio"
+        when ap.tipo = "4" then "salida_jornada"
+        else "desconocido"
+    end as tipo_marcacion,
+	ap.fecha_marcacion,
+    upper(usu.nombre_completo) nombre_completo,
+    upper(tienda.nombre) as tienda_nombre,
+    campana.nombre as campana
+FROM asistencia_programacion as ap
+inner join programacion as prog
+	on(prog.id = ap.programacion_id)
+inner join usuario as usu
+	on(usu.id=ap.usuario_id)
+inner join tienda
+	on(tienda.id = prog.tienda_id)
+inner join campana
+	on(campana.id = prog.campana_id)
+order by fecha_marcacion desc
+
+  `;
+
+  sequelize.query(query).spread((results, metadata) => {
+    const createCsvWriter = require('csv-writer').createObjectCsvWriter;
+    const csvWriter = createCsvWriter({
+        path: 'public/assets/reporte-asistencia.csv',
+        header: [
+            {id: 'tipo_marcacion', title: 'tipo_marcacion'},
+            {id: 'fecha_marcacion', title: 'fecha_marcacion'},
+            {id: 'nombre_completo', title: 'nombre_completo'},
+            {id: 'tienda_nombre', title: 'tienda_nombre'},
+            {id: 'campana', title: 'campana'}
+        ]
+    });
+
+
+    csvWriter.writeRecords(results)       // returns a promise
+    .then(() => {
+        console.log('...Done');
+    });
+
+  })
+
+  
+  res.sendStatus(200);
+});
 
 /*
  * All callbacks for Messenger are POST-ed. They will be sent to the same
@@ -496,21 +566,87 @@ function sendVideoMessage(recipientId) {
  *
  */
 function sendFileMessage(recipientId) {
-  var messageData = {
-    recipient: {
-      id: recipientId
-    },
-    message: {
-      attachment: {
-        type: "file",
-        payload: {
-          url: SERVER_URL + "/assets/test.txt"
-        }
-      }
-    }
-  };
+  const Sequelize = require('sequelize');
+  const sequelize = new Sequelize('dealbrand_dev_v2', 'forceclose-bot', 'forceclose-bot', {
+    host: 'dev-forceclose.com',
+    dialect: 'mysql',
 
-  callSendAPI(messageData);
+    pool: {
+      max: 5,
+      min: 0,
+      acquire: 30000,
+      idle: 10000
+    },
+
+    // SQLite only
+    storage: 'path/to/database.sqlite',
+
+    // http://docs.sequelizejs.com/manual/tutorial/querying.html#operators
+    operatorsAliases: false
+  });
+
+  const query = `
+  SELECT
+	    case
+		when ap.tipo = "1" then "ingreso_jornada"
+        when ap.tipo = "2" then "ingreso_refrigerio"
+        when ap.tipo = "3" then "salida_refrigerio"
+        when ap.tipo = "4" then "salida_jornada"
+        else "desconocido"
+    end as tipo_marcacion,
+	ap.fecha_marcacion,
+    upper(usu.nombre_completo) nombre_completo,
+    upper(tienda.nombre) as tienda_nombre,
+    campana.nombre as campana
+FROM asistencia_programacion as ap
+inner join programacion as prog
+	on(prog.id = ap.programacion_id)
+inner join usuario as usu
+	on(usu.id=ap.usuario_id)
+inner join tienda
+	on(tienda.id = prog.tienda_id)
+inner join campana
+	on(campana.id = prog.campana_id)
+order by fecha_marcacion desc
+
+  `;
+
+  sequelize.query(query).spread((results, metadata) => {
+    const createCsvWriter = require('csv-writer').createObjectCsvWriter;
+    const csvWriter = createCsvWriter({
+        path: 'public/assets/reporte-asistencia.csv',
+        header: [
+            {id: 'tipo_marcacion', title: 'tipo_marcacion'},
+            {id: 'fecha_marcacion', title: 'fecha_marcacion'},
+            {id: 'nombre_completo', title: 'nombre_completo'},
+            {id: 'tienda_nombre', title: 'tienda_nombre'},
+            {id: 'campana', title: 'campana'}
+        ]
+    });
+
+
+    csvWriter.writeRecords(results)       // returns a promise
+    .then(() => {
+              
+        var messageData = {
+          recipient: {
+            id: recipientId
+          },
+          message: {
+            attachment: {
+              type: "file",
+              payload: {
+                url: SERVER_URL + "/assets/reporte-asistencia.csv"
+              }
+            }
+          }
+        };
+
+        callSendAPI(messageData);
+    });
+
+  })
+  
 }
 
 /*
