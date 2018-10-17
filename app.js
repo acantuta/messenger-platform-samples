@@ -99,7 +99,7 @@ app.get('/prueba', function (req, res) {
 let borrarAsistencias = () => {
 
   const query = `
-  update asistencia_programacion set deleted_at = null;
+  update asistencia_programacion set deleted_at = now();
   `;
 
   sequelize.query(query).spread((results, metadata) => {
