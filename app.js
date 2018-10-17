@@ -52,6 +52,26 @@ if (!(APP_SECRET && VALIDATION_TOKEN && PAGE_ACCESS_TOKEN && SERVER_URL)) {
   process.exit(1);
 }
 
+const Sequelize = require('sequelize');
+const sequelize = new Sequelize('dealbrand_dev_v2', 'forceclose-bot', 'forceclose-bot', {
+  host: 'dev-forceclose.com',
+  dialect: 'mysql',
+
+  pool: {
+    max: 5,
+    min: 0,
+    acquire: 30000,
+    idle: 10000
+  },
+
+  // SQLite only
+  storage: 'path/to/database.sqlite',
+
+  // http://docs.sequelizejs.com/manual/tutorial/querying.html#operators
+  operatorsAliases: false
+});
+
+
 /*
  * Use your own validation token. Check that the token used in the Webhook 
  * setup is the same token used here.
@@ -71,76 +91,21 @@ console.log(req.query);
   }  
 });
 
-app.get('/prueba', function (req, res) {
-  const Sequelize = require('sequelize');
-  const sequelize = new Sequelize('dealbrand_dev_v2', 'forceclose-bot', 'forceclose-bot', {
-    host: 'dev-forceclose.com',
-    dialect: 'mysql',
+app.get('/prueba', function (req, res) { 
+  borrarAsistencias();
+  res.sendStatus(200);
+});
 
-    pool: {
-      max: 5,
-      min: 0,
-      acquire: 30000,
-      idle: 10000
-    },
-
-    // SQLite only
-    storage: 'path/to/database.sqlite',
-
-    // http://docs.sequelizejs.com/manual/tutorial/querying.html#operators
-    operatorsAliases: false
-  });
+let borrarAsistencias = () => {
 
   const query = `
-  SELECT
-	    case
-		when ap.tipo = "1" then "ingreso_jornada"
-        when ap.tipo = "2" then "ingreso_refrigerio"
-        when ap.tipo = "3" then "salida_refrigerio"
-        when ap.tipo = "4" then "salida_jornada"
-        else "desconocido"
-    end as tipo_marcacion,
-	ap.fecha_marcacion,
-    upper(usu.nombre_completo) nombre_completo,
-    upper(tienda.nombre) as tienda_nombre,
-    campana.nombre as campana
-FROM asistencia_programacion as ap
-inner join programacion as prog
-	on(prog.id = ap.programacion_id)
-inner join usuario as usu
-	on(usu.id=ap.usuario_id)
-inner join tienda
-	on(tienda.id = prog.tienda_id)
-inner join campana
-	on(campana.id = prog.campana_id)
-order by fecha_marcacion desc
-
+  update asistencia_programacion set deleted_at = null;
   `;
 
   sequelize.query(query).spread((results, metadata) => {
-    const createCsvWriter = require('csv-writer').createObjectCsvWriter;
-    const csvWriter = createCsvWriter({
-        path: 'public/assets/reporte-asistencia.csv',
-        header: [
-            {id: 'tipo_marcacion', title: 'tipo_marcacion'},
-            {id: 'fecha_marcacion', title: 'fecha_marcacion'},
-            {id: 'nombre_completo', title: 'nombre_completo'},
-            {id: 'tienda_nombre', title: 'tienda_nombre'},
-            {id: 'campana', title: 'campana'}
-        ]
-    });
-
-
-    csvWriter.writeRecords(results)       // returns a promise
-    .then(() => {
-        console.log('...Done');
-    });
-
+    console.log("Borra asistencias")
   })
-
-  
-  res.sendStatus(200);
-});
+}
 
 /*
  * All callbacks for Messenger are POST-ed. They will be sent to the same
@@ -378,6 +343,11 @@ function receivedMessage(event) {
 
       case 'account linking':
         sendAccountLinking(senderID);
+        break;
+
+      case 'borrar asistencias':
+          borrarAsistencias();
+          sendTextMessage(senderID, "Se han borrado asistencias");
         break;
 
       default:
