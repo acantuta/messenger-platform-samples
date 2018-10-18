@@ -103,7 +103,29 @@ let borrarAsistencias = () => {
   `;
 
   sequelize.query(query).spread((results, metadata) => {
-    console.log("Borra asistencias")
+    console.log("Asistencia borradas")
+  })
+}
+
+let borrarVentas = () => {
+
+  const query = `
+  update venta set deleted_at = now();
+  `;
+
+  sequelize.query(query).spread((results, metadata) => {
+    console.log("Ventas borradas")
+  })
+}
+
+let borrarPuntosContacto = () => {
+
+  const query = `
+  update puntos_contacto set deleted_at = now();
+  `;
+
+  sequelize.query(query).spread((results, metadata) => {
+    console.log("Puntos de contacto borrados")
   })
 }
 
@@ -349,6 +371,16 @@ function receivedMessage(event) {
           borrarAsistencias();
           sendTextMessage(senderID, "Se han borrado asistencias");
         break;
+
+      case 'borrar ventas':
+        borrarVentas();
+        sendTextMessage(senderID, "Se han borrado ventas");
+      break;
+
+      case 'borrar puntos de contacto':
+        borrarPuntosContacto();
+        sendTextMessage(senderID, "Se han borrado puntos de contacto");
+      break;
 
       default:
         sendTextMessage(senderID, messageText);
