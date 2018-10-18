@@ -288,6 +288,7 @@ function receivedMessage(event) {
 
   // You may get a text or attachment but not both
   var messageText = message.text;
+  messageText = messageText.toLowerCase();
   var messageAttachments = message.attachments;
   var quickReply = message.quick_reply;
 
