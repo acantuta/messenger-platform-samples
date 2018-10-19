@@ -107,6 +107,17 @@ let borrarAsistencias = () => {
   })
 }
 
+let borrarAsistenciasSupervisor = () => {
+
+  const query = `
+  update asistencia_supervisor set deleted_at = now();
+  `;
+
+  sequelize.query(query).spread((results, metadata) => {
+    console.log("Asistencia de supervisor borradas")
+  })
+}
+
 let borrarVentas = () => {
 
   const query = `
@@ -372,6 +383,11 @@ function receivedMessage(event) {
           borrarAsistencias();
           sendTextMessage(senderID, "Se han borrado asistencias");
         break;
+
+      case 'borrar asistencias supervisor':
+        borrarAsistenciasSupervisor();
+        sendTextMessage(senderID, "Se han borrado asistencias de supervisor");
+      break;
 
       case 'borrar ventas':
         borrarVentas();
